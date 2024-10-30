@@ -23,7 +23,7 @@ This supporting information contains all the PDF-documents containing the code t
 
 - Simulation study: Adjusting for covariate misclassification: Two examples of covariate misclassification in linear regression, along with a simulation study repeating the second example. Described in Section 5.1.
 - Covariate misclassification from a latent Gaussian variable with measurement error: A simulated example of how dichotomizing a continuous variable with error leads to misclassification, presented in Section 5.2.
-- Missing observations in a binary variable: A simulated example with missing observations, presented in Section 5.3.
+- Missing observations in a binary covariate: A simulated example with missing observations, presented in Section 5.3.
 - Adjusting for response misclassification with the sslogit link: A simulated example of how to deal with response misclassification in INLA, described in Section 5.4.
 - Birth weight analysis: The birthweight example presented in Section 6.1
 - Cervical cancer and herpes: The cervical cancer case-control study example presented in Section 6.2

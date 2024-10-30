@@ -1,5 +1,5 @@
 ---
-title: "Missing observations in a binary variable"
+title: "Missing observations in a binary covariate"
 output: 
   pdf_document:
     extra_dependencies: ["bm"]
