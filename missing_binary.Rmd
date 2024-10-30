@@ -1,0 +1,12 @@
+---
+title: "Missing observations in a binary variable"
+output: 
+  pdf_document:
+    extra_dependencies: ["bm"]
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+

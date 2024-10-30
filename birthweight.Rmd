@@ -1,0 +1,127 @@
+---
+title: "Birth weight analysis"
+output: 
+  pdf_document:
+    extra_dependencies: ["bm"]
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.height = 4)
+```
+
+
+```{r}
+run_birthweight1 <- FALSE
+run_birthweight2 <- FALSE
+run_birthweight_mcmc <- FALSE
+```
+
+```{r load packages}
+library(inlamisclass)
+library(ggplot2)
+```
+
+
+Across all cases, we will use the same misclassification matrix and number of iterations, so we define these.
+
+```{r define MC matrix and niter}
+MC_matrix <- matrix(c(0.95, 0.05, 0.2, 0.8), nrow = 2, byrow = T)
+niter <- 10000
+```
+
+```{r fit naive model}
+birthweight_naive <- INLA::inla(bwt ~ lwt + smoke, data = birthweight)
+```
+
+
+# Birth weight analysis, case 1
+In this case, we assume that the proportion of smokers in the study is 0.4, and that the probability of a woman smoking is independent of other covariates. That means that the exposure model will only have an intercept, and this we set to be $\alpha_0 = \log(\frac{p}{1-p})$, where $p = 0.4$. 
+
+```{r fit birthweight model 1, eval = run_birthweight1}
+p <- 0.4
+
+start_time <- Sys.time()
+birthweight_model1 <- inla_is(formula_moi = bwt ~ smoke + lwt,
+                              formula_imp = smoke ~ 1,
+                              alpha = log(p/(1-p)),
+                              MC_matrix = MC_matrix,
+                              data = birthweight, niter = niter)
+end_time <- Sys.time()
+
+birthweight_results1 <- list(runtime = end_time - start_time, model = birthweight_model1,
+                            summary = make_results_df(birthweight_model1, niter = niter))
+
+saveRDS(list(model1 = birthweight_results1,
+             niter = niter, nburnin = 0, rundate = Sys.time()),
+        file = "code/results/birthweight_results1.rds")
+```
+
+```{r load birthweight model 1}
+birthweight_results1 <- readRDS("code/results/birthweight_results1.rds")
+```
+
+
+# Birth weight analysis, case 2
+
+In this case, we let the prbability that a person is smoking depend on their weight according to a logistic exposure model with $\alpha_0 = -0.3$ and $\alpha_z = 0.02$, meaning that higher body weight leads to a higher probability of smoking.
+
+```{r fit birthweight model 2, eval = run_birthweight2}
+start_time <- Sys.time()
+birthweight_model2 <- inla_is(formula_moi = bwt ~ smoke + lwt,
+                                formula_imp = smoke ~ lwt,
+                                alpha = c(-3, 0.02),
+                                MC_matrix = MC_matrix,
+                                data = birthweight, niter = niter)
+end_time <- Sys.time()
+
+birthweight_results2 <- list(runtime = end_time - start_time, model = birthweight_model2,
+                             summary = make_results_df(birthweight_model2, niter = niter))
+
+
+
+# Save results ----
+saveRDS(list(model2 = birthweight_results2,
+             niter = niter, nburnin = 0, rundate = Sys.time()),
+        file = "code/results/birthweight_results2.rds")
+```
+
+```{r load mirthweight model 2}
+birthweight_results2 <- readRDS("code/results/birthweight_results2.rds")
+```
+
+```{r plot model 1 and 2}
+plot_compare_inlamisclass(list(birthweight_results1$model1$model,
+                               birthweight_results2$model2$model),
+                          naive_mod = birthweight_naive, 
+                          niter = niter, num_inlamisclass_models = 2)
+```
+
+# Figure for paper
+```{r}
+results1 <- make_results_df(birthweight_results1$model1$model)$moi
+results2 <- make_results_df(birthweight_results2$model2$model)$moi
+results_naive <- birthweight_naive$summary.fixed
+results_naive$variable <- rownames(results_naive)
+
+all_res <- dplyr::bind_rows(Ex1 = results1, Ex2 = results2, Naive = results_naive, .id = "Model")
+all_res$labels <- paste0("beta", "[", c(0, "z", "x"), "]")
+all_res$Model <- factor(all_res$Model, levels = c("Naive", "Ex1", "Ex2"))
+all_res$Model <- plyr::revalue(all_res$Model, 
+                               c("Naive" = "Model with no adjustment", 
+                                 "Ex1" = "Case 1: Smoking status is independent", 
+                                 "Ex2" = "Case 2: Smoking status depends on weight"))
+
+ggplot(dplyr::filter(all_res, variable!= "(Intercept)"), aes(y = Model)) +
+  geom_point(aes(x = mean)) +
+  geom_errorbarh(aes(xmin = .data$"0.025quant", xmax = .data$"0.975quant"), height = .2) +
+  scale_y_discrete(limits = rev) +
+  facet_wrap(vars(labels), scales = "free_x", labeller = label_parsed) +
+  theme_bw() +
+  theme(axis.title = element_blank())
+
+ggsave("figures/birthweight.pdf", height = 2.3, width = 7)
+```
+
+
+
+

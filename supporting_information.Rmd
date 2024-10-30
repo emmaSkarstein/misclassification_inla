@@ -1,0 +1,48 @@
+---
+title: 'Supporting information: "Bayesian models for missing and misclassified variables using integrated nested Laplace approximations"'
+author: "Emma Skarstein, Leonardo Bastos, Håvard Rue, Stefanie Muff"
+output: 
+  bookdown::pdf_document2:
+    toc: false
+    number_sections: false
+    extra_dependencies: ["bm", "pdfpages"]
+header-includes:
+  - \usepackage{titling}
+  - \pretitle{\begin{flushleft}\LARGE\bfseries\sffamily}
+  - \posttitle{\end{flushleft}}
+  - \preauthor{\begin{flushleft}\large}
+  - \postauthor{\end{flushleft}}
+  - \predate{\begin{flushleft}\large}
+  - \postdate{\end{flushleft}}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+This supporting information contains all the PDF-documents containing the code to reproduce the results in the examples in the paper, along with some additional examples. The subsections are:
+
+- Simulation study: Adjusting for covariate misclassification: Two examples of covariate misclassification in linear regression, along with a simulation study repeating the second example. Described in Section 5.1.
+- Covariate misclassification from a latent Gaussian variable with measurement error: A simulated example of how dichotomizing a continuous variable with error leads to misclassification, presented in Section 5.2.
+- Missing observations in a binary variable: A simulated example with missing observations, presented in Section 5.3.
+- Adjusting for response misclassification with the sslogit link: A simulated example of how to deal with response misclassification in INLA, described in Section 5.4.
+- Birth weight analysis: The birthweight example presented in Section 6.1
+- Cervical cancer and herpes: The cervical cancer case-control study example presented in Section 6.2
+
+
+Some of the files use functions and data sets from the R package `inlamisclass`, which is available to download from GitHub:
+
+```
+devtools::install_github("emmaSkarstein/inlamisclass")
+```
+
+or see https://github.com/emmaSkarstein/inlamisclass.
+
+\newpage
+
+\includepdf[pages=-]{simulation_study.pdf}
+\includepdf[pages=-]{missing_binary.pdf}
+\includepdf[pages=-]{continuous_me_mc.pdf}
+\includepdf[pages=-]{response_mc.pdf}
+\includepdf[pages=-]{birthweight.pdf}
+\includepdf[pages=-]{cervical_cancer.pdf}
+

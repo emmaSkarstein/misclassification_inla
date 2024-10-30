@@ -1,0 +1,288 @@
+---
+title: "Simulation study: Adjusting for covariate misclassification"
+output: 
+  pdf_document:
+    extra_dependencies: ["bm"]
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r load libraries, message = FALSE}
+library(ggplot2)
+library(patchwork)
+library(INLA)
+library(inlamisclass)
+```
+
+```{r, echo = FALSE}
+run_ex1 <- FALSE
+run_ex2 <- FALSE
+run_study <- FALSE
+```
+
+```{r}
+niter <- 150000
+```
+
+In this file, we look at two simulated examples and a simultation study where the second example is simulated a number of times to examine the variability. 
+
+# First example: Symmetric misclassification with independent exposure
+
+In the simplest case, $\bm{x}$ is independent of any covariates and has a symmetrical misclassification matrix.
+In this example, we have $x_i \sim \text{Bernoulli}(0.5)$ for $1\leq i\leq n$ with $n = 100$, and misclassification matrix
+$$
+  \mathsf{M}=
+  \left(
+  \begin{matrix}
+  0.9 & 0.1 \\
+  0.1 & 0.9\\
+  \end{matrix}
+  \right) \label{eq:mcmatrix2}
+$$
+
+That means that the exposure model is
+$$
+  \text{logit}(E[\bm{x}]) = \bm{0} \ ,
+$$
+
+and we simulate the main model of interest according to the model
+$$
+  \bm{y} = \bm{1} + \bm{x} + \bm{\epsilon} \ , \quad \bm{\epsilon} \sim N(\bm{0}, \mathbf{I}) \ .
+$$
+
+In this example we will estimate $\beta_0, \beta_x, \tau_y$ .
+
+The model for $\bm{x}$ ($\pi(\bm{x})$) is simple, and thanks to the symmetry of $\mathsf{M}$ and the fact that $P(x_i=1)=P(x_i=0)$, we have that $\pi(\bm{w} \mid \bm{x}) = \pi(\bm{x} \mid \bm{w})$. Therefore, it would be sufficient to sample $\bm{x}^{(k)}$ by adding misclassification error to $\bm{w}$ using the given misclassification matrix. This may seem counter-intuitive, but is a direct consequence of the simulation setup. The posterior distribution of $\bm\theta_y=(\beta_0, \beta_x)$ is obtained by
+$$
+  \pi(\bm{\theta}_y \mid \bm{y}, \bm{w}) \approx \sum_{k=1}^K \pi(\bm{\theta}_y \mid \bm{x}^{(k)},  \bm{y}) \cdot w_k
+$$
+with $w_k = \pi(\bm{y}\mid \bm{x}^{(k)})$.
+
+```{r running first simulation, eval = run_ex1}
+MC_matrix <- matrix(c(0.9, 0.1, 0.1, 0.9), nrow = 2, byrow = T)
+
+set.seed(1)
+data1 <- generate_misclassified(n = 100, p = 1, MC_matrix = MC_matrix,
+                                betas = c(1, 1, 0),
+                                alphas = c(0, 0))
+sum(data1$x)/nrow(data1)
+
+start_time <- Sys.time()
+model1 <- inla_is(formula_moi = y ~ w,
+                  formula_imp = w ~ 1,
+                  alpha = 0,
+                  MC_matrix = MC_matrix,
+                  data = data1,
+                  niter = niter)
+end_time <- Sys.time()
+
+saveRDS(list(model = model1,
+             data = data1,
+             runtime = end_time - start_time,
+             niter = niter, nburnin = 0, rundate = Sys.time()),
+        file = "code/results/simulated1.rds")
+
+```
+
+```{r saving and plotting first simulation}
+simulated1 <- readRDS("code/results/simulated1.rds")
+naive1 <- inla(y ~ w, data = simulated1$data)
+correct2 <- inla(y ~ x, data = simulated1$data)
+
+plot_compare_inlamisclass(mcmc_results = simulated1$model,
+                          naive_mod = naive1,
+                          correct_mod = correct2,
+                          niter = simulated1$niter,
+                          plot_intercept = TRUE)
+```
+
+In this example, we ran the importance sampling for `r simulated1$niter` iterations, which took `r round(simulated1$runtime)` hours.
+
+
+# Second example: Asymmetric misclassification and exposure depending on covariate
+
+In a second example we used
+$$
+  \mathsf{M}=
+  \left(
+  \begin{matrix}
+  0.9 & 0.1 \\
+  0.2 & 0.8 \\
+  \end{matrix}
+  \right) \ , 
+$$
+and generated the true $\bm{x}$ with a dependency on an additional continuous (and error-free) covariate $\bm{z}$. First, each component of $\bm{z}$ was generated uniformly $z_i \sim \text{Unif}(-1,1)$ for $1\leq i \leq 200$, and then the $\bm{x}$ variables was sampled according to an exposure model given as
+$$
+  \text{logit}[E( \bm{x} \mid \bm{z})] =  \alpha_0 \mathsf{1} + \alpha_z\bm{z} \ ,
+$$
+with $\bm\alpha^\top=(\alpha_0, \alpha_z)=(-0.5,0.25)$.
+This dependency was then also appropriately reflected in the analysis, assuming that $\bm\alpha$ was known. The response $\bm{y}$ was simulated according to the linear model
+$$
+  \bm{y} = \bm{1} + \bm{x} + \bm{z} + \bm{\epsilon} \ , \quad \bm{\epsilon} \sim\mathcal{N}(\bm{0}, \mathbf{I}) \ .
+$$
+To sample from $\pi(\bm{x} \mid \bm{w}, \bm{z})$, we used that the components in $\bm{x}$ are independent, thus
+$$
+  \pi(\bm{x} \mid \bm{w}, \bm{z})  =  \prod_{i=1}^n  \pi(x_i \mid w_i, z_i) \ .
+%\frac{\pi(\bm{w}\mid \bm{x},\bm{z}) \cdot \pi(\bm{x} \mid \bm{z})}{\pi(\bm{w} )} \ , %=
+%\frac{\pi(\bm{w}\mid \bm{x},\bm{z}) \cdot \pi(\bm{x} \mid \bm{z})}{\sum_{i=0}^1\pi(\bm{w} \mid x=i)}
+$$
+Each component can then be sampled from a Bernoulli distribution with success probability
+$$
+\pi(x_i \mid w_i, z_i)  =
+  \frac{ \pi(w_i\mid x_i) \cdot \pi(x_i \mid z_i) }{\sum_{j=0}^1\pi(w_i \mid x_i =j)\cdot \pi(x_i=j \mid z_i)} \ ,
+$$
+using the error model $\pi(w \mid x)$ as encoded in the MC matrix, and $\pi(x\mid z)$ from the exposure model.
+
+The rest of the procedure is again the same as in the first example: For each iteration $k$, a sample $\bm{x}^{(k)}$ is employed to obtain the posterior distribution of the regression parameters $\pi(\bm{\theta}_y \mid \bm{x}^{(k)}, \bm{z}, \bm{y})$, which is weighted with the conditional marginal likelihood $\pi(\bm{y}\mid \bm{x}^{(k)}, \bm{z})$.
+
+In this example we estimate $\beta_0, \beta_x, \beta_z, \tau_y$ .
+
+```{r running second simulation, eval = run_ex2}
+MC_matrix <- matrix(c(0.9, 0.1, 0.2, 0.8), nrow = 2, byrow = T)
+
+set.seed(1)
+data2 <- generate_misclassified(n = 100, p = 2, MC_matrix = MC_matrix,
+                                betas = c(1, 1, 1),
+                                alphas = c(-0.5, 0.25))
+
+start_time <- Sys.time()
+model2 <- inla_is(formula_moi = y ~ w + z,
+                  formula_imp = w ~ z,
+                  alpha = c(-0.5, 0.25),
+                  MC_matrix = MC_matrix,
+                  data = data2,
+                  niter = niter)
+end_time <- Sys.time()
+
+saveRDS(list(model = model2,
+             data = data2,
+             runtime = end_time - start_time,
+             niter = niter, nburnin = 0, rundate = Sys.time()),
+        file = "code/results/simulated2.rds")
+```
+
+```{r saving and plotting second simulation}
+simulated2 <- readRDS("code/results/simulated2.rds")
+naive2 <- inla(y ~ w + z, data = simulated2$data)
+correct2 <- inla(y ~ x + z, data = simulated2$data)
+
+plot_compare_inlamisclass(mcmc_results = simulated2$model, 
+                          naive_mod = naive2,
+                          correct_mod = correct2,
+                          plot_intercept = TRUE, niter = simulated2$niter)
+```
+
+In this example, we ran the importance sampling for `r simulated2$niter` iterations, which took `r round(simulated2$runtime, 2)` hours.
+
+# Repeating the simulation many times
+
+When running the first two examples, we have noticed that the model sometimes does not seem to adjust completely for the misclassification, when different simulated datasets are used. To examine this further, we simulate 10 different datasets using the same simulation setup, and fit the model separately to each of these. We use the simulation setup from the second example, that is:
+
+MC matrix: 
+$$
+\mathsf{M}=
+  \left(
+  \begin{matrix}
+  0.9 & 0.1 \\
+  0.2 & 0.8\\
+  \end{matrix}
+  \right) \ , 
+$$
+exposure model: 
+$$  
+\text{logit}(E[\bm{x} \mid \bm{z}]) = -0.5 \cdot \bm{1} + 0.25 \bm{z} \ ,
+$$
+and model of interest:
+$$
+\bm{y} = \bm{1} + \bm{x} + \bm{z} + \bm{\epsilon} \ , \quad \bm{\epsilon} \sim N(\bm{0}, \mathbf{I}) \ .
+$$
+```{r setting parameters}
+n <- 100
+n_runs <- 5
+# Suffix giving number of iterations and sample size when saving data and models
+name_append <- paste0("n", n, "_", "niter", niter)
+```
+
+```{r running simulation study, eval = run_study}
+MC_matrix <- matrix(c(0.9, 0.1, 0.2, 0.8), nrow = 2, byrow = T)
+
+all_runs <- list()
+
+for(i in 1:n_runs){
+  # Generate data
+  data_mc <- generate_misclassified(n = n, p = 2, MC_matrix = MC_matrix,
+                                    betas = c(1, 1, 1),
+                                    alphas = c(-0.5, 0.25))
+
+  # Check correct model
+  correct_coef <- inla(y ~ x + z, data = data_mc)$summary.fixed
+  correct_coef
+
+  # attenuated version
+  naive_coef <- inla(y ~ w + z, data = data_mc)$summary.fixed
+  naive_coef
+
+  inla_mod <- inla_is(formula_moi = y ~ w + z,
+                      formula_imp = w ~ z,
+                      alpha = c(-0.5, 0.25),
+                      MC_matrix = MC_matrix,
+                      data = data_mc,
+                      niter = niter)
+
+  # Extracting relevant stuff
+  naive_summ <- data.frame(naive_coef[, c(1,2,3,5)])
+  naive_summ$variable <- c("beta.0", "beta.x", "beta.z")
+
+  correct_summ <- data.frame(correct_coef[, c(1,2,3,5)])
+  correct_summ$variable <- c("beta.0", "beta.x", "beta.z")
+
+  inla_summ <- make_results_df(inla_mod)$moi
+  inla_summ$variable <- c("beta.0", "beta.x", "beta.z")
+  colnames(inla_summ) <- c("variable", "mean", "X0.025quant", "X0.975quant")
+
+  all_mods <- dplyr::bind_rows(naive = naive_summ,
+                               inla_is = inla_summ,
+                               correct = correct_summ,
+                               .id = "model")
+
+  all_mods$iteration <- as.factor(i)
+  all_runs <- rbind(all_runs, all_mods)
+}
+
+saveRDS(all_runs, file = paste0("code/results/run_simulation_many_times_", name_append, ".rds"))
+```
+
+
+```{r read in results}
+all_runs <- readRDS(paste0("code/results/run_simulation_many_times_", name_append, ".rds"))
+all_runs$model <- factor(all_runs$model, levels = c("naive", "inla_is", "correct"))
+colors <- c("brown3", "darkgoldenrod2", "royalblue4")
+```
+
+
+```{r plot every run}
+ggplot(all_runs, aes(x = mean, y = iteration, color = model)) +
+  geom_point(position = position_dodge2(width = 0.5, reverse = TRUE)) +
+  geom_linerange(aes(xmin = X0.025quant, xmax = X0.975quant),
+                 position = position_dodge2(width = 0.5, reverse = TRUE)) +
+  scale_y_discrete(limits = rev) +
+  scale_color_manual(values = colors) +
+  facet_grid(cols = vars(variable), scales = "free") +
+  theme_bw()
+ggsave(paste0("figures/all_realizations_simulated_", name_append, ".pdf"))
+```
+
+
+```{r plot boxplot}
+ggplot(dplyr::filter(all_runs, !(variable %in% c("alpha.0", "alpha.z"))), 
+       aes(y = mean, x = model)) +
+  geom_boxplot() +
+  facet_grid(cols = vars(variable), scales = "free") +
+  theme_bw() +
+  theme(axis.title.x = element_blank())
+ggsave(paste0("figures/boxplots_simulated", name_append, ".pdf"))
+```
+
