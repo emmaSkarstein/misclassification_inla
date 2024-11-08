@@ -7,27 +7,28 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+start_time <- Sys.time()
 ```
 
 
 ```{r load libraries, message = FALSE}
 library(ggplot2)
-library(patchwork)
 library(INLA)
 library(inlamisclass)
 ```
 
-```{r, echo = FALSE}
-run_ex1 <- FALSE
-run_ex2 <- FALSE
-run_study <- FALSE
+```{r which sections should be run, echo = FALSE}
+run_ex1 <- TRUE
+run_ex2 <- TRUE
+run_study <- TRUE
 ```
 
 ```{r}
-niter <- 150000
+# Number of iterations for importance sampling
+niter <- 200000
 ```
 
-In this file, we look at two simulated examples and a simultation study where the second example is simulated a number of times to examine the variability. 
+In this file, we look at two simulated examples and a simulation study where the second example is simulated a number of times to examine the variability. This file takes several hours to run, due to the importance sampling. If you want to just compile the file using pre-computed results, you can set all the "run" parameters in the chunk above to "FALSE".
 
 # First example: Symmetric misclassification with independent exposure
 
@@ -71,28 +72,28 @@ data1 <- generate_misclassified(n = 100, p = 1, MC_matrix = MC_matrix,
 sum(data1$x)/nrow(data1)
 
 start_time <- Sys.time()
-model1 <- inla_is(formula_moi = y ~ w,
-                  formula_imp = w ~ 1,
-                  alpha = 0,
-                  MC_matrix = MC_matrix,
-                  data = data1,
-                  niter = niter)
+model1 <- inla_is_misclass(formula_moi = y ~ w,
+                           formula_imp = w ~ 1,
+                           alpha = 0,
+                           MC_matrix = MC_matrix,
+                           data = data1,
+                           niter = niter)
 end_time <- Sys.time()
 
 saveRDS(list(model = model1,
              data = data1,
              runtime = end_time - start_time,
              niter = niter, nburnin = 0, rundate = Sys.time()),
-        file = "code/results/simulated1.rds")
+        file = "results/simulated1.rds")
 
 ```
 
 ```{r saving and plotting first simulation}
-simulated1 <- readRDS("code/results/simulated1.rds")
+simulated1 <- readRDS("results/simulated1.rds")
 naive1 <- inla(y ~ w, data = simulated1$data)
 correct2 <- inla(y ~ x, data = simulated1$data)
 
-plot_compare_inlamisclass(mcmc_results = simulated1$model,
+plot_compare_inlamisclass(is_results = simulated1$model,
                           naive_mod = naive1,
                           correct_mod = correct2,
                           niter = simulated1$niter,
@@ -149,27 +150,27 @@ data2 <- generate_misclassified(n = 100, p = 2, MC_matrix = MC_matrix,
                                 alphas = c(-0.5, 0.25))
 
 start_time <- Sys.time()
-model2 <- inla_is(formula_moi = y ~ w + z,
-                  formula_imp = w ~ z,
-                  alpha = c(-0.5, 0.25),
-                  MC_matrix = MC_matrix,
-                  data = data2,
-                  niter = niter)
+model2 <- inla_is_misclass(formula_moi = y ~ w + z,
+                           formula_imp = w ~ z,
+                           alpha = c(-0.5, 0.25),
+                           MC_matrix = MC_matrix,
+                           data = data2,
+                           niter = niter)
 end_time <- Sys.time()
 
 saveRDS(list(model = model2,
              data = data2,
              runtime = end_time - start_time,
              niter = niter, nburnin = 0, rundate = Sys.time()),
-        file = "code/results/simulated2.rds")
+        file = "results/simulated2.rds")
 ```
 
 ```{r saving and plotting second simulation}
-simulated2 <- readRDS("code/results/simulated2.rds")
+simulated2 <- readRDS("results/simulated2.rds")
 naive2 <- inla(y ~ w + z, data = simulated2$data)
 correct2 <- inla(y ~ x + z, data = simulated2$data)
 
-plot_compare_inlamisclass(mcmc_results = simulated2$model, 
+plot_compare_inlamisclass(is_results = simulated2$model, 
                           naive_mod = naive2,
                           correct_mod = correct2,
                           plot_intercept = TRUE, niter = simulated2$niter)
@@ -201,7 +202,7 @@ $$
 $$
 ```{r setting parameters}
 n <- 100
-n_runs <- 5
+n_runs <- 10
 # Suffix giving number of iterations and sample size when saving data and models
 name_append <- paste0("n", n, "_", "niter", niter)
 ```
@@ -225,12 +226,12 @@ for(i in 1:n_runs){
   naive_coef <- inla(y ~ w + z, data = data_mc)$summary.fixed
   naive_coef
 
-  inla_mod <- inla_is(formula_moi = y ~ w + z,
-                      formula_imp = w ~ z,
-                      alpha = c(-0.5, 0.25),
-                      MC_matrix = MC_matrix,
-                      data = data_mc,
-                      niter = niter)
+  inla_mod <- inla_is_misclass(formula_moi = y ~ w + z,
+                               formula_imp = w ~ z,
+                               alpha = c(-0.5, 0.25),
+                               MC_matrix = MC_matrix,
+                               data = data_mc,
+                               niter = niter)
 
   # Extracting relevant stuff
   naive_summ <- data.frame(naive_coef[, c(1,2,3,5)])
@@ -252,26 +253,33 @@ for(i in 1:n_runs){
   all_runs <- rbind(all_runs, all_mods)
 }
 
-saveRDS(all_runs, file = paste0("code/results/run_simulation_many_times_", name_append, ".rds"))
+saveRDS(all_runs, file = paste0("results/run_simulation_many_times_", name_append, ".rds"))
 ```
 
 
 ```{r read in results}
-all_runs <- readRDS(paste0("code/results/run_simulation_many_times_", name_append, ".rds"))
-all_runs$model <- factor(all_runs$model, levels = c("naive", "inla_is", "correct"))
+all_runs <- readRDS(paste0("results/run_simulation_many_times_", name_append, ".rds"))
+all_runs$Model <- factor(all_runs$model, levels = c("naive", "inla_is", "correct"))
+all_runs$Model <- plyr::revalue(all_runs$Model, 
+                               c("naive" = "Model with no adjustment", 
+                                 "inla_is" = "Model adjusting for MC", 
+                                 "correct" = "Model using correct covariate value"))
+all_runs$labels <- paste0(gsub("\\.", "[", all_runs$variable), "]")
 colors <- c("brown3", "darkgoldenrod2", "royalblue4")
 ```
 
 
 ```{r plot every run}
-ggplot(all_runs, aes(x = mean, y = iteration, color = model)) +
+ggplot(all_runs, aes(x = mean, y = iteration, color = Model)) +
   geom_point(position = position_dodge2(width = 0.5, reverse = TRUE)) +
   geom_linerange(aes(xmin = X0.025quant, xmax = X0.975quant),
                  position = position_dodge2(width = 0.5, reverse = TRUE)) +
   scale_y_discrete(limits = rev) +
   scale_color_manual(values = colors) +
-  facet_grid(cols = vars(variable), scales = "free") +
-  theme_bw()
+  facet_grid(cols = vars(labels), scales = "free", labeller = label_parsed) +
+  xlab("Posterior mean and 95% credible intervals") +
+  ylab("Simulated dataset") +
+  theme_bw() 
 ggsave(paste0("figures/all_realizations_simulated_", name_append, ".pdf"))
 ```
 
@@ -286,3 +294,10 @@ ggplot(dplyr::filter(all_runs, !(variable %in% c("alpha.0", "alpha.z"))),
 ggsave(paste0("figures/boxplots_simulated", name_append, ".pdf"))
 ```
 
+```{r, echo = FALSE}
+end_time <- Sys.time()
+run_time <- end_time - start_time
+run_time
+```
+
+The code in this file took `r run_time` hours to run. 

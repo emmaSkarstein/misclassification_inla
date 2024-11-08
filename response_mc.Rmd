@@ -78,12 +78,12 @@ r1 <- inla(formula = formula, data = df,
 ```
 
 ```{r save M0 and M1, eval = run_inla, echo = FALSE}
-saveRDS(r0, "r0.rds")
-saveRDS(r1, "r1.rds")
+saveRDS(r0, "results/r0.rds")
+saveRDS(r1, "results/r1.rds")
 ```
 ```{r, load M0 and M1, echo = FALSE}
-r0 <- readRDS("r0.rds")
-r1 <- readRDS("r1.rds")
+r0 <- readRDS("results/r0.rds")
+r1 <- readRDS("results/r1.rds")
 ```
 
 ```{r evaluate M0 and M1}
@@ -159,10 +159,10 @@ r.list <- lapply(X = 1:nrow(SSgrid),
 r2 <- inla.merge(loo = r.list, prob = SS.weights)
 ```
 ```{r save r2, echo = FALSE, eval=run_inla}
-saveRDS(r2, "r2.rds")
+saveRDS(r2, "results/r2.rds")
 ```
 ```{r, echo = FALSE}
-r2 <- readRDS("r2.rds")
+r2 <- readRDS("results/r2.rds")
 ```
 
 
@@ -201,7 +201,6 @@ marginals.df <- dplyr::bind_rows(
 library(ggplot2)
 
 ggplot(marginals.df, aes(x = x, y = y, color = Models, fill = Models)) + 
-  #geom_line() + 
   geom_area(alpha = 0.5, position = "identity") +
   geom_vline(xintercept = inla.link.logit(p_y), show.legend = F, 
              linetype = "dashed") +

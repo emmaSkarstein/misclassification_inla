@@ -10,8 +10,8 @@ knitr::opts_chunk$set(echo = TRUE, fig.height = 4)
 ```
 
 ```{r, echo=FALSE}
-run_case_control1 <- FALSE
-run_case_control2 <- FALSE
+run_case_control1 <- TRUE
+run_case_control2 <- TRUE
 ```
 
 
@@ -21,6 +21,12 @@ library(dplyr)
 library(ggplot2)
 library(INLA)
 ```
+
+```{r set number of iterations}
+# Number of iterations for importance sampling
+niter <- 100000
+```
+
 
 The data `cervical_cancer` consists of $n = 2044$ rows and three columns:
 
@@ -67,8 +73,6 @@ and the exposure model $\text{logit}[E(x)] = \alpha_0 \bm{1}$, where $\alpha_0$ 
 For running the model, we will run importance sampling for the given number of iterations, and the results will be saved along with the running time:
 
 ```{r fitting cc model 1, eval = run_case_control1}
-niter <- 10000
-
 start_time <- Sys.time()
 case_control_model1 <- inla_is(formula_moi = y ~ w,
                               formula_imp = w ~ 1,
@@ -86,11 +90,11 @@ case_control_results1 <- list(runtime = end_time - start_time,
 
 saveRDS(list(case_control_model = case_control_results1,
              niter = niter, rundate = Sys.time()),
-        file = "code/results/case_control_results1.rds")
+        file = "results/case_control_results1.rds")
 ```
 
 ```{r loading cc model 1}
-case_control_results1 <- readRDS("code/results/case_control_results1.rds")
+case_control_results1 <- readRDS("results/case_control_results1.rds")
 ```
 
 We fit a naive model that ignores the misclassification in $\bm{w}$ for a comparison.
@@ -177,11 +181,11 @@ case_control_results2 <- list(
 
 saveRDS(list(case_control_model = case_control_results2,
              niter = niter, nburnin = 0, rundate = Sys.time()),
-        file = "code/results/case_control_results2.rds")
+        file = "results/case_control_results2.rds")
 ```
 
 ```{r loading cc model 2}
-case_control_results2 <- readRDS("code/results/case_control_results2.rds")
+case_control_results2 <- readRDS("results/case_control_results2.rds")
 ```
 
 
@@ -204,7 +208,9 @@ plot_compare_inlamisclass(
   naive_mod = naive_cc, plot_intercept = TRUE,
   num_inlamisclass_models = 2, niter = case_control_results2$niter)
 ```
+
 ## Figure for article
+
 ```{r}
 results_nondiff <- make_results_df(case_control_results1$case_control_model$model)$moi
 results_diff <- make_results_df(case_control_results2$case_control_model$model)$moi

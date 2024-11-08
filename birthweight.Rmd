@@ -11,9 +11,9 @@ knitr::opts_chunk$set(echo = TRUE, fig.height = 4)
 
 
 ```{r}
-run_birthweight1 <- FALSE
-run_birthweight2 <- FALSE
-run_birthweight_mcmc <- FALSE
+run_birthweight1 <- TRUE
+run_birthweight2 <- TRUE
+run_birthweight_mcmc <- TRUE
 ```
 
 ```{r load packages}
@@ -26,7 +26,8 @@ Across all cases, we will use the same misclassification matrix and number of it
 
 ```{r define MC matrix and niter}
 MC_matrix <- matrix(c(0.95, 0.05, 0.2, 0.8), nrow = 2, byrow = T)
-niter <- 10000
+# Number of iterations for importance sampling:
+niter <- 100000
 ```
 
 ```{r fit naive model}
@@ -53,11 +54,11 @@ birthweight_results1 <- list(runtime = end_time - start_time, model = birthweigh
 
 saveRDS(list(model1 = birthweight_results1,
              niter = niter, nburnin = 0, rundate = Sys.time()),
-        file = "code/results/birthweight_results1.rds")
+        file = "results/birthweight_results1.rds")
 ```
 
 ```{r load birthweight model 1}
-birthweight_results1 <- readRDS("code/results/birthweight_results1.rds")
+birthweight_results1 <- readRDS("results/birthweight_results1.rds")
 ```
 
 
@@ -82,11 +83,11 @@ birthweight_results2 <- list(runtime = end_time - start_time, model = birthweigh
 # Save results ----
 saveRDS(list(model2 = birthweight_results2,
              niter = niter, nburnin = 0, rundate = Sys.time()),
-        file = "code/results/birthweight_results2.rds")
+        file = "results/birthweight_results2.rds")
 ```
 
 ```{r load mirthweight model 2}
-birthweight_results2 <- readRDS("code/results/birthweight_results2.rds")
+birthweight_results2 <- readRDS("results/birthweight_results2.rds")
 ```
 
 ```{r plot model 1 and 2}
