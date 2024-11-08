@@ -1,4 +1,6 @@
-# Supporting information and reproducible research files for "Bayesian models for missing and misclassified variables using integrated nested Laplace approximations"
+*Supporting information and reproducible research files for the article:*
+
+# Bayesian models for missing and misclassified variables using integrated nested Laplace approximations
 
 This supporting information contains Rmarkdown files reproducing the results in the examples in the paper, along with some additional examples. The files are:
 
