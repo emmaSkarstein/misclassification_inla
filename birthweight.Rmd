@@ -42,11 +42,11 @@ In this case, we assume that the proportion of smokers in the study is 0.4, and 
 p <- 0.4
 
 start_time <- Sys.time()
-birthweight_model1 <- inla_is(formula_moi = bwt ~ smoke + lwt,
-                              formula_imp = smoke ~ 1,
-                              alpha = log(p/(1-p)),
-                              MC_matrix = MC_matrix,
-                              data = birthweight, niter = niter)
+birthweight_model1 <- inla_is_misclass(formula_moi = bwt ~ smoke + lwt,
+                                       formula_imp = smoke ~ 1,
+                                       alpha = log(p/(1-p)),
+                                       MC_matrix = MC_matrix,
+                                       data = birthweight, niter = niter)
 end_time <- Sys.time()
 
 birthweight_results1 <- list(runtime = end_time - start_time, model = birthweight_model1,
@@ -68,11 +68,11 @@ In this case, we let the prbability that a person is smoking depend on their wei
 
 ```{r fit birthweight model 2, eval = run_birthweight2}
 start_time <- Sys.time()
-birthweight_model2 <- inla_is(formula_moi = bwt ~ smoke + lwt,
-                                formula_imp = smoke ~ lwt,
-                                alpha = c(-3, 0.02),
-                                MC_matrix = MC_matrix,
-                                data = birthweight, niter = niter)
+birthweight_model2 <- inla_is_misclass(formula_moi = bwt ~ smoke + lwt,
+                                       formula_imp = smoke ~ lwt,
+                                       alpha = c(-3, 0.02),
+                                       MC_matrix = MC_matrix,
+                                       data = birthweight, niter = niter)
 end_time <- Sys.time()
 
 birthweight_results2 <- list(runtime = end_time - start_time, model = birthweight_model2,
