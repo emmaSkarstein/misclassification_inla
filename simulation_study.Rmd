@@ -259,6 +259,7 @@ saveRDS(all_runs, file = paste0("results/run_simulation_many_times_", name_appen
 
 ```{r read in results}
 all_runs <- readRDS(paste0("results/run_simulation_many_times_", name_append, ".rds"))
+#all_runs <- readRDS(paste0("results/run_simulation_many_times_n100_niter150000.rds"))
 all_runs$Model <- factor(all_runs$model, levels = c("naive", "inla_is", "correct"))
 all_runs$Model <- plyr::revalue(all_runs$Model, 
                                c("naive" = "Model with no adjustment", 
