@@ -74,13 +74,13 @@ For running the model, we will run importance sampling for the given number of i
 
 ```{r fitting cc model 1, eval = run_case_control1}
 start_time <- Sys.time()
-case_control_model1 <- inla_is(formula_moi = y ~ w,
-                              formula_imp = w ~ 1,
-                              alpha = alpha0,
-                              MC_matrix = M,
-                              data = incomplete_data,
-                              niter = niter,
-                              family = "binomial", Ntrials = 1)
+case_control_model1 <- inla_is_misclass(formula_moi = y ~ w,
+                                        formula_imp = w ~ 1,
+                                        alpha = alpha0,
+                                        MC_matrix = M,
+                                        data = incomplete_data,
+                                        niter = niter,
+                                        family = "binomial", Ntrials = 1)
 end_time <- Sys.time()
 
 case_control_results1 <- list(runtime = end_time - start_time, 
@@ -164,14 +164,14 @@ So we use the exposure/imputation model $\text{logit}[E(\bm{x}\mid \bm{y})] = \a
 
 ```{r fitting cc model 2, eval = run_case_control2}
 start_time <- Sys.time()
-case_control_model2 <- inla_is(formula_moi = y ~ w,
-                              formula_imp = w ~ y,
-                              alpha = alphas,
-                              MC_matrix = list(MC_1 = M1, MC_0 = M0),
-                              data = incomplete_data,
-                              niter = niter,
-                              conditional = "y",
-                              family = "binomial", Ntrials = 1)
+case_control_model2 <- inla_is_misclass(formula_moi = y ~ w,
+                                        formula_imp = w ~ y,
+                                        alpha = alphas,
+                                        MC_matrix = list(MC_1 = M1, MC_0 = M0),
+                                        data = incomplete_data,
+                                        niter = niter,
+                                        conditional = "y",
+                                        family = "binomial", Ntrials = 1)
 end_time <- Sys.time()
 
 case_control_results2 <- list(
@@ -208,6 +208,7 @@ plot_compare_inlamisclass(
   naive_mod = naive_cc, plot_intercept = TRUE,
   num_inlamisclass_models = 2, niter = case_control_results2$niter)
 ```
+
 
 ## Figure for article
 
