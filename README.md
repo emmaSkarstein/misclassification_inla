@@ -11,7 +11,6 @@ This supporting information contains Rmarkdown files reproducing the results in 
 - [response_misclassification.pdf](https://github.com/emmaSkarstein/misclassification_inla/blob/main/response_misclassification.pdf): A simulated example of how to deal with response misclassification in INLA, described in Section 5.4
 - [simulation_study.pdf](https://github.com/emmaSkarstein/misclassification_inla/blob/main/simulation_study.pdf): Two examples of covariate misclassification in linear regression, along with a simulation study repeating the second example. Described in Section 5.1
 
-A joint document containing all the examples can be found in [supporting_information.pdf](https://github.com/emmaSkarstein/misclassification_inla/blob/main/supporting_information.pdf).
 
 Some of the files use functions and data sets from the R package `inlamisclass`, which is available to download from GitHub:
 
