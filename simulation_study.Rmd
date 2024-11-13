@@ -18,9 +18,9 @@ library(inlamisclass)
 ```
 
 ```{r which sections should be run, echo = FALSE}
-run_ex1 <- TRUE
-run_ex2 <- TRUE
-run_study <- TRUE
+run_ex1 <- FALSE
+run_ex2 <- FALSE
+run_study <- FALSE
 ```
 
 ```{r}
@@ -177,6 +177,44 @@ plot_compare_inlamisclass(is_results = simulated2$model,
 ```
 
 In this example, we ran the importance sampling for `r simulated2$niter` iterations, which took `r round(simulated2$runtime, 2)` hours.
+
+
+# Examining how the estimate changes if we run the importance sampling longer
+
+We are curious how the estimate changes if we use more samples for the importance sampling procedure. To examine this, we create several different subsets of the samples generated in the second example. 
+
+```{r}
+is_samples <- readRDS("results/simulated2.rds")
+
+cutoffs <- c(100, 500, 1000, 5000, 10000, 50000, 100000, 200000)
+
+subset_list <- list()
+for(i in 1:length(cutoffs)){
+  cut <- cutoffs[i]
+  subset_list[[i]] <- lapply(1:cut, function(i) is_samples$model[[i]])
+}
+
+summary_list <- lapply(subset_list, make_results_df)
+moi_list <- lapply(summary_list, "[[", "moi")
+moi_df <- dplyr::bind_rows(moi_list, .id = "iterations")
+moi_df$iterations <- rep(cutoffs, each = 3)
+
+correct <- inla(y ~ x + z, data = is_samples$data)
+correct_mean <- data.frame(mean = correct$summary.fixed$mean)
+correct_mean$variable <- c("(Intercept)", "w", "z")
+
+ggplot(moi_df, aes(y = mean, x = iterations)) +
+  geom_point() +
+  geom_line() +
+  geom_hline(data = correct_mean, aes(yintercept = mean)) +
+  ylim(0.25,1.25) +
+  scale_x_log10() +
+  facet_wrap(~ variable, scales = "free") +
+  theme_bw()
+```
+
+Note that the x-axis is on a log10 scale here. This shows that after 10000 iterations, the estimate seems to stabilize. Note that this may be specific to this particular case and might not generalize.  
+
 
 # Repeating the simulation many times
 
