@@ -1,8 +1,18 @@
 ---
 title: "Simulation study: Adjusting for covariate misclassification"
+subtitle: "Code and details for 'Bayesian models for missing and misclassified variables using integrated nested Laplace approximations'"
+author: "Emma Skarstein, Leonardo Bastos, Håvard Rue and Stefanie Muff"
 output: 
   pdf_document:
     extra_dependencies: ["bm"]
+header-includes:
+  - \usepackage{titling}
+  - \pretitle{\begin{flushleft}\Huge\bfseries}
+  - \posttitle{\end{flushleft}}  
+  - \preauthor{\begin{flushleft}\Large}
+  - \postauthor{\end{flushleft}}  
+  - \predate{\begin{flushleft}\large}
+  - \postdate{\end{flushleft}}
 ---
 
 ```{r setup, include=FALSE}
@@ -18,9 +28,9 @@ library(inlamisclass)
 ```
 
 ```{r which sections should be run, echo = FALSE}
-run_ex1 <- FALSE
-run_ex2 <- FALSE
-run_study <- FALSE
+run_ex1 <- TRUE
+run_ex2 <- TRUE
+run_study <- TRUE
 ```
 
 ```{r}
@@ -246,6 +256,8 @@ name_append <- paste0("n", n, "_", "niter", niter)
 ```
 
 ```{r running simulation study, eval = run_study}
+set.seed(1)
+
 MC_matrix <- matrix(c(0.9, 0.1, 0.2, 0.8), nrow = 2, byrow = T)
 
 all_runs <- list()
@@ -297,7 +309,6 @@ saveRDS(all_runs, file = paste0("results/run_simulation_many_times_", name_appen
 
 ```{r read in results}
 all_runs <- readRDS(paste0("results/run_simulation_many_times_", name_append, ".rds"))
-#all_runs <- readRDS(paste0("results/run_simulation_many_times_n100_niter150000.rds"))
 all_runs$Model <- factor(all_runs$model, levels = c("naive", "inla_is", "correct"))
 all_runs$Model <- plyr::revalue(all_runs$Model, 
                                c("naive" = "Model with no adjustment", 
@@ -319,18 +330,23 @@ ggplot(all_runs, aes(x = mean, y = iteration, color = Model)) +
   xlab("Posterior mean and 95% credible intervals") +
   ylab("Simulated dataset") +
   theme_bw() 
-ggsave(paste0("figures/all_realizations_simulated_", name_append, ".pdf"))
+ggsave(paste0("figures/all_realizations_simulated_", name_append, ".pdf"), height = 5, width = 8)
 ```
 
 
 ```{r plot boxplot}
 ggplot(dplyr::filter(all_runs, !(variable %in% c("alpha.0", "alpha.z"))), 
-       aes(y = mean, x = model)) +
-  geom_boxplot() +
-  facet_grid(cols = vars(variable), scales = "free") +
+       aes(y = mean, x = Model)) +
+  geom_boxplot(aes(color = Model)) +
+  facet_grid(cols = vars(labels), scales = "free", labeller = label_parsed) +
+  scale_color_manual(values = colors) +
+  coord_flip() +
+  scale_x_discrete(limits = rev) +
+  ylab("Posterior mean") +
   theme_bw() +
-  theme(axis.title.x = element_blank())
-ggsave(paste0("figures/boxplots_simulated", name_append, ".pdf"))
+  theme(axis.title.y = element_blank(),
+        legend.position = "none")
+ggsave(paste0("figures/boxplots_simulated", name_append, ".pdf"), height = 3, width = 7)
 ```
 
 ```{r, echo = FALSE}

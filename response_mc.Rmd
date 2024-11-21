@@ -1,8 +1,18 @@
 ---
 title: "Adjusting for response misclassification with the sslogit link"
+subtitle: "Code and details for 'Bayesian models for missing and misclassified variables using integrated nested Laplace approximations'"
+author: "Emma Skarstein, Leonardo Bastos, Håvard Rue and Stefanie Muff"
 output: 
   pdf_document:
     extra_dependencies: ["bm"]
+header-includes:
+  - \usepackage{titling}
+  - \pretitle{\begin{flushleft}\Huge\bfseries}
+  - \posttitle{\end{flushleft}}  
+  - \preauthor{\begin{flushleft}\Large}
+  - \postauthor{\end{flushleft}}  
+  - \predate{\begin{flushleft}\large}
+  - \postdate{\end{flushleft}}
 ---
 
 ```{r setup, include=FALSE}
@@ -193,10 +203,16 @@ c(r2$summary.fixed$mean,
 
 ```{r}
 marginals.df <- dplyr::bind_rows(
-  'M0 - ignoring misclassification' = data.frame(r0$marginals.fixed$`(Intercept)`), 
-  'M1 - fixed sens. and spec.' = data.frame(r1$marginals.fixed$`(Intercept)`), 
-  'M2 - propagated uncertainty' = data.frame(r2$marginals.fixed$`(Intercept)`), 
+  'M0' = data.frame(r0$marginals.fixed$`(Intercept)`), 
+  'M1' = data.frame(r1$marginals.fixed$`(Intercept)`), 
+  'M2' = data.frame(r2$marginals.fixed$`(Intercept)`), 
   .id = "Models")
+
+marginals.df$Models <- factor(marginals.df$Models, levels = c("M0", "M1", "M2"))
+marginals.df$Models <- plyr::revalue(marginals.df$Models, 
+                               c("M0" = "Ignoring misclassification", 
+                                 "M1" = "Fixed sens. and spec.", 
+                                 "M2" = "Propagated uncertainty"))
 
 library(ggplot2)
 

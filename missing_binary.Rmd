@@ -1,12 +1,27 @@
 ---
 title: "Missing observations in a binary covariate"
+subtitle: "Code and details for 'Bayesian models for missing and misclassified variables using integrated nested Laplace approximations'"
+author: "Emma Skarstein, Leonardo Bastos, Håvard Rue and Stefanie Muff"
 output: 
   pdf_document:
     extra_dependencies: ["bm"]
+header-includes:
+  - \usepackage{titling}
+  - \pretitle{\begin{flushleft}\Huge\bfseries}
+  - \posttitle{\end{flushleft}}  
+  - \preauthor{\begin{flushleft}\Large}
+  - \postauthor{\end{flushleft}}  
+  - \predate{\begin{flushleft}\large}
+  - \postdate{\end{flushleft}}
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+start_time <- Sys.time()
+```
+
+
+```{r run IS code}
 # Re-run simulation study or load pre-generated results?
 run_study <- TRUE
 ```
@@ -24,7 +39,7 @@ In this example, we impute missing values in a binary variable using INLA within
 ```{r setting parameters}
 n <- 100 # No. of observations
 n_runs <- 10 # No. of simulated data sets
-niter <- 200000 # No. of iterations for importance sampling
+niter <- 100000 # No. of iterations for importance sampling
 
 # Suffix giving number of iterations and sample size when saving data and models
 name_append <- paste0("n", n, "_", "niter", niter)
@@ -42,6 +57,8 @@ generate_missing <- function(n, n_miss){
 
 
 ```{r running simulation study, eval = run_study}
+set.seed(1)
+
 all_runs <- list()
 
 for(i in 1:n_runs){
@@ -92,9 +109,9 @@ saveRDS(all_runs, file = paste0("results/missing_", name_append, ".rds"))
 all_runs <- readRDS(paste0("results/missing_", name_append, ".rds"))
 all_runs$Model <- factor(all_runs$model, levels = c("naive", "inla_is", "correct"))
 all_runs$Model <- plyr::revalue(all_runs$Model, 
-                               c("naive" = "Model fit on only complete observations", 
+                               c("naive" = "Model fit on only complete \nobservations", 
                                  "inla_is" = "Model with imputation", 
-                                 "correct" = "Model using correct value for missing observations"))
+                                 "correct" = "Model using correct value \nfor missing observations"))
 all_runs$labels <- paste0(gsub("\\.", "[", all_runs$variable), "]")
 colors <- c("brown3", "darkgoldenrod2", "royalblue4")
 ```
@@ -111,5 +128,14 @@ ggplot(all_runs, aes(x = mean, y = iteration, color = Model)) +
   xlab("Posterior mean and 95% credible intervals") +
   ylab("Simulated dataset") +
   theme_bw() 
-ggsave(paste0("figures/missing_simulated_", name_append, ".pdf"), height = 4.5, width = 8)
+ggsave(paste0("figures/missing_simulated_", name_append, ".pdf"), height = 5, width = 8)
 ```
+
+
+```{r, echo = FALSE}
+end_time <- Sys.time()
+run_time <- end_time - start_time
+run_time
+```
+
+The code in this file took `r run_time` hours to run. 
