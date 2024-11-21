@@ -1,8 +1,18 @@
 ---
 title: "Birth weight analysis"
+subtitle: "Code and details for 'Bayesian models for missing and misclassified variables using integrated nested Laplace approximations'"
+author: "Emma Skarstein, Leonardo Bastos, Håvard Rue and Stefanie Muff"
 output: 
   pdf_document:
     extra_dependencies: ["bm"]
+header-includes:
+  - \usepackage{titling}
+  - \pretitle{\begin{flushleft}\Huge\bfseries}
+  - \posttitle{\end{flushleft}}  
+  - \preauthor{\begin{flushleft}\Large}
+  - \postauthor{\end{flushleft}}  
+  - \predate{\begin{flushleft}\large}
+  - \postdate{\end{flushleft}}
 ---
 
 ```{r setup, include=FALSE}
@@ -13,7 +23,6 @@ knitr::opts_chunk$set(echo = TRUE, fig.height = 4)
 ```{r}
 run_birthweight1 <- TRUE
 run_birthweight2 <- TRUE
-run_birthweight_mcmc <- TRUE
 ```
 
 ```{r load packages}
@@ -64,13 +73,13 @@ birthweight_results1 <- readRDS("results/birthweight_results1.rds")
 
 # Birth weight analysis, case 2
 
-In this case, we let the prbability that a person is smoking depend on their weight according to a logistic exposure model with $\alpha_0 = -0.3$ and $\alpha_z = 0.02$, meaning that higher body weight leads to a higher probability of smoking.
+In this case, we let the probability that a person is smoking depend on their weight according to a logistic exposure model with $\alpha_0 = -0.4$ and $\alpha_z = 0.02$, meaning that higher body weight leads to a higher probability of smoking.
 
 ```{r fit birthweight model 2, eval = run_birthweight2}
 start_time <- Sys.time()
 birthweight_model2 <- inla_is_misclass(formula_moi = bwt ~ smoke + lwt,
                                        formula_imp = smoke ~ lwt,
-                                       alpha = c(-3, 0.02),
+                                       alpha = c(-0.4, 0.02),
                                        MC_matrix = MC_matrix,
                                        data = birthweight, niter = niter)
 end_time <- Sys.time()
