@@ -20,8 +20,7 @@ knitr::opts_chunk$set(echo = TRUE)
 start_time <- Sys.time()
 ```
 
-
-```{r run IS code}
+```{r run IS code, eval = FALSE}
 # Re-run simulation study or load pre-generated results?
 run_study <- TRUE
 ```
@@ -132,10 +131,8 @@ ggsave(paste0("figures/missing_simulated_", name_append, ".pdf"), height = 5, wi
 ```
 
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, eval = FALSE}
 end_time <- Sys.time()
 run_time <- end_time - start_time
 run_time
 ```
-
-The code in this file took `r run_time` hours to run. 

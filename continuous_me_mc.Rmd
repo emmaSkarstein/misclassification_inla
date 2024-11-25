@@ -262,4 +262,6 @@ ggplot(sim_and_calc) +
   labs(x = "Specificity", y = "Sensitivity", color = "ME variance") +
   theme_bw()
 ```
-This plot shows the resulting sensitivity and specificity when the measurement error variance goes from $0.01$ to $2$.
+
+This plot shows the resulting sensitivity and specificity when the measurement error variance goes from $0.01$ to $2$. The very jumpy line is the sample sensitivity and specificity from the simulated data, while the straight line indicates the expected values.
+

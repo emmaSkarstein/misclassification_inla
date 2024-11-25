@@ -27,7 +27,13 @@ library(INLA)
 library(inlamisclass)
 ```
 
-```{r which sections should be run, echo = FALSE}
+```{r, echo = FALSE, eval = TRUE}
+run_ex1 <- FALSE
+run_ex2 <- FALSE
+run_study <- FALSE
+```
+```{r which sections should be run, eval = FALSE}
+# Re-run simulation study or load pre-generated results?
 run_ex1 <- TRUE
 run_ex2 <- TRUE
 run_study <- TRUE
@@ -223,7 +229,7 @@ ggplot(moi_df, aes(y = mean, x = iterations)) +
   theme_bw()
 ```
 
-Note that the x-axis is on a log10 scale here. This shows that after 10000 iterations, the estimate seems to stabilize. Note that this may be specific to this particular case and might not generalize.  
+Note that the x-axis is on a log10 scale here. Note that this may be specific to this particular case and might not generalize.  
 
 
 # Repeating the simulation many times
@@ -349,10 +355,3 @@ ggplot(dplyr::filter(all_runs, !(variable %in% c("alpha.0", "alpha.z"))),
 ggsave(paste0("figures/boxplots_simulated", name_append, ".pdf"), height = 3, width = 7)
 ```
 
-```{r, echo = FALSE}
-end_time <- Sys.time()
-run_time <- end_time - start_time
-run_time
-```
-
-The code in this file took `r run_time` hours to run. 
